@@ -3578,7 +3578,7 @@ static struct device_attribute tfa98xx_state_attr =
      __ATTR(calibra, 0444, tfa98xx_state_show, tfa98xx_state_store);
 
 #if IS_ENABLED(OEM_TARGET_PRODUCT_EBBA)
-void tfa98xx_firmware_show()
+void tfa98xx_firmware_show(void)
 {
 	 char  tfa98xx_name[30] ="";
 	 snprintf(tfa98xx_name,sizeof(tfa98xx_name),"tfa9873EUK/N1");
