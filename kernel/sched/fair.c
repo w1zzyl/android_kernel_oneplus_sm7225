@@ -50,10 +50,6 @@ extern unsigned int ht_fuse_boost;
 #include <linux/oem/tpp.h>
 #endif
 
-#ifdef CONFIG_TPD
-#include <linux/oem/tpd.h>
-#endif
-
 #ifdef CONFIG_SMP
 static inline bool task_fits_max(struct task_struct *p, int cpu);
 #endif /* CONFIG_SMP */
@@ -4072,10 +4068,6 @@ bias_to_this_cpu(struct task_struct *p, int cpu, int start_cpu)
 			cpu_active(cpu);
 	bool start_cap_test = (capacity_orig_of(cpu) >=
 					capacity_orig_of(start_cpu));
-#ifdef CONFIG_TPD
-	cpumask_t mask = CPU_MASK_ALL;
-#endif
-
 #ifdef CONFIG_RATP
 	if (is_ratp_enable() &&
 			(!(im_rendering(p) && prefer_sched_group(p)) ||
@@ -4083,14 +4075,6 @@ bias_to_this_cpu(struct task_struct *p, int cpu, int start_cpu)
 		base_test = cpumask_test_cpu(cpu, &p->cpus_suggested) &&
 				cpu_active(cpu);
 #endif
-#ifdef CONFIG_TPD
-	if (is_tpd_enable() && is_tpd_task(p)) {
-
-		tpd_mask(p, &mask);
-		base_test = cpumask_test_cpu(cpu, &mask) && cpu_active(cpu);
-	}
-#endif
-
 	return base_test && start_cap_test;
 }
 
@@ -7260,11 +7244,6 @@ static int get_start_cpu(struct task_struct *p)
 			start_cpu, is_ratp_enable());
 
 #endif
-#ifdef CONFIG_TPD
-	if ((is_dynamic_tpd_task(p) || is_tpd_task(p)) && is_tpd_enable()) {
-		start_cpu = tpd_suggested_cpu(p, start_cpu);
-	}
-#endif
 	return start_cpu;
 }
 
@@ -7356,11 +7335,6 @@ static void find_best_target(struct sched_domain *sd, cpumask_t *cpus,
 		if (is_ratp_enable() &&
 				!(im_rendering(p) && prefer_sched_group(p)) && !(is_gmod_enable() && prefer_top(p)))
 			cpumask_copy(&new_allowed_cpus, &p->cpus_suggested);
-#endif
-#ifdef CONFIG_TPD
-		if (is_tpd_enable() && is_tpd_task(p)) {
-			tpd_mask(p, &new_allowed_cpus);
-		}
 #endif
 	}
 	do {
@@ -8275,15 +8249,9 @@ static int find_energy_efficient_cpu(struct task_struct *p, int prev_cpu,
 		delta = task_util(p);
 #endif
 
-#ifdef CONFIG_TPD
-	if (task_placement_boost_enabled(p) || fbt_env.need_idle || boosted ||
-	    is_rtg || __cpu_overutilized(prev_cpu, delta) ||
-	    !task_fits_max(p, prev_cpu) || cpu_isolated(prev_cpu) || (is_tpd_enable() && is_tpd_task(p))) {
-#else
 	if (task_placement_boost_enabled(p) || fbt_env.need_idle || boosted ||
 	    is_rtg || __cpu_overutilized(prev_cpu, delta) ||
 	    !task_fits_max(p, prev_cpu) || cpu_isolated(prev_cpu)) {
-#endif
 		best_energy_cpu = cpu;
 		goto unlock;
 	}
@@ -9153,13 +9121,6 @@ static inline bool can_migrate_boosted_task(struct task_struct *p,
 {
 #ifdef CONFIG_RATP
 	struct root_domain *rd = cpu_rq(smp_processor_id())->rd;
-#endif
-#ifdef CONFIG_TPD
-	if (is_tpd_enable() && is_tpd_task(p)) {
-		/*avoid task migrate to wrong tpd suggested cpu*/
-		if (tpd_check(p, dst_cpu))
-			return false;
-	}
 #endif
 #ifdef CONFIG_RATP
 	if (is_ratp_enable()) {

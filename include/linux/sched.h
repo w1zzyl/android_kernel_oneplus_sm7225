@@ -1630,11 +1630,6 @@ struct task_struct {
 	int tpp_flag;
 #endif
 
-#ifdef CONFIG_TPD
-	int tpd;
-	int dtpd; /* dynamic tpd task */
-	int dtpdg; /* dynamic tpd task group */
-#endif
 
 #ifdef CONFIG_HOUSTON
 #ifndef HT_PERF_COUNT_MAX
