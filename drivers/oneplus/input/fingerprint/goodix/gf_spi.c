@@ -374,37 +374,6 @@ static inline int irq_setup(struct gf_dev *gf_dev)
 	return status;
 }
 
-static inline void gf_kernel_key_input(struct gf_dev *gf_dev, struct gf_key *gf_key)
-{
-	uint32_t key_input = 0;
-
-	if (gf_key->key == GF_KEY_HOME) {
-		key_input = GF_KEY_INPUT_HOME;
-	} else if (gf_key->key == GF_KEY_POWER) {
-		key_input = GF_KEY_INPUT_POWER;
-	} else if (gf_key->key == GF_KEY_CAMERA) {
-		key_input = GF_KEY_INPUT_CAMERA;
-	} else if (gf_key->key == GF_KEY_LONGPRESS) {
-		key_input = GF_KEY_INPUT_LONG_PRESS;
-	} else {
-		/* add special key define */
-		key_input = gf_key->key;
-	}
-
-	if ((GF_KEY_POWER == gf_key->key || GF_KEY_LONGPRESS == gf_key->key)
-			&& (gf_key->value == 1)) {
-		input_report_key(gf_dev->input, key_input, 1);
-		input_sync(gf_dev->input);
-		input_report_key(gf_dev->input, key_input, 0);
-		input_sync(gf_dev->input);
-	}
-
-	if (gf_key->key == GF_KEY_HOME) {
-		input_report_key(gf_dev->input, key_input, gf_key->value);
-		input_sync(gf_dev->input);
-	}
-}
-
 static inline long gf_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	struct gf_dev *gf_dev = &gf;
@@ -445,15 +414,6 @@ static inline long gf_ioctl(struct file *filp, unsigned int cmd, unsigned long a
 	case GF_IOC_RESET:
 		pr_info("%s GF_IOC_RESET.\n", __func__);
 		gf_hw_reset(gf_dev, 0);
-		break;
-	case GF_IOC_INPUT_KEY_EVENT:
-		if (copy_from_user(&gf_key, (struct gf_key *)arg, sizeof(struct gf_key))) {
-			pr_info("Failed to copy input key event from user to kernel\n");
-			retval = -EFAULT;
-			break;
-		}
-
-		gf_kernel_key_input(gf_dev, &gf_key);
 		break;
 	case GF_IOC_ENABLE_SPI_CLK:
 		pr_debug("%s GF_IOC_ENABLE_SPI_CLK\n", __func__);
